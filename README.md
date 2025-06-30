@@ -16,10 +16,17 @@ export CUSTOM_GITHUB_URL="https://mirror.example.com"
 ```
 
 ## 使用方法
-在任何脚本中导入本项目即可自动生效：
+在任何脚本中导入本项目即可自动生效，或直接使用命令行工具 `esphome-cn`：
 
 ```python
 import esphome
+
+```
+
+运行示例：
+
+```bash
+esphome-cn run livingroom.yaml
 ```
 
 此后无论是 `requests` 还是 `git` 操作，只要包含 `github.com` 都会被重写到镜像地址。
