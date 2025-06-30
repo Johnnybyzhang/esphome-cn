@@ -1,4 +1,5 @@
 import os
+import re
 
 from dowhen import when
 import requests
@@ -16,12 +17,14 @@ CUSTOM_URL = os.environ.get("CUSTOM_GITHUB_URL", "https://gh.161024.xyz")
 
 
 def _transform_url(url: str) -> str:
-    """Prefix GitHub URLs with the custom mirror."""
-    if url.startswith(CUSTOM_URL):
+    """Rewrite GitHub URLs using the custom mirror."""
+    if CUSTOM_URL in url:
         return url
-    if "github.com" in url:
-        return f"{CUSTOM_URL}/{url}"
-    return url
+
+    def repl(match: re.Match) -> str:
+        return f"{CUSTOM_URL}/{match.group(0)}"
+
+    return re.sub(r"https?://[^\s]*github[^\s]*", repl, url)
 
 
 # Patch requests.Session.request
@@ -50,13 +53,11 @@ if run_git_command is not None:
     def _patch_git(cmd):
         patched = False
         for i, arg in enumerate(cmd):
-            if (
-                isinstance(arg, str)
-                and "github.com" in arg
-                and not arg.startswith(CUSTOM_URL)
-            ):
-                cmd[i] = f"{CUSTOM_URL}/{arg}"
-                patched = True
+            if isinstance(arg, str):
+                new_arg = _transform_url(arg)
+                if new_arg != arg:
+                    cmd[i] = new_arg
+                    patched = True
         if patched:
             return {"cmd": cmd}
 
