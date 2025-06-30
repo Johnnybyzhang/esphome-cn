@@ -4,10 +4,11 @@ from dowhen import when
 import requests
 
 try:
-    from platformio.http import HTTPSession
+    from platformio.http import HTTPClient, HTTPSession
     from platformio.package.vcsclient import VCSClientFactory
 except Exception:  # pragma: no cover
     HTTPSession = None
+    HTTPClient = None
     VCSClientFactory = None
 
 # Base URL used as prefix for GitHub requests
@@ -64,4 +65,19 @@ if run_git_command is not None:
 if VCSClientFactory is not None:
     when(VCSClientFactory.new, "<start>").do(
         lambda src_dir, remote_url, **kwargs: {"remote_url": _transform_url(remote_url)}
+    )
+
+if HTTPClient is not None:
+
+    def _patch_httpclient_init(endpoints, **kwargs):
+        if isinstance(endpoints, (list, tuple)):
+            endpoints = [_transform_url(e) for e in endpoints]
+        else:
+            endpoints = _transform_url(endpoints)
+        return {"endpoints": endpoints}
+
+    when(HTTPClient.__init__, "<start>").do(
+        lambda self, endpoints, *args, **kwargs: _patch_httpclient_init(
+            endpoints, **kwargs
+        )
     )
