@@ -1,0 +1,45 @@
+import os
+import requests
+
+from dowhen import when
+
+# Base URL used as prefix for GitHub requests
+CUSTOM_URL = os.environ.get("CUSTOM_GITHUB_URL", "https://gh.161024.xyz")
+
+
+def _transform_url(url: str) -> str:
+    """Prefix GitHub URLs with the custom mirror."""
+    if url.startswith(CUSTOM_URL):
+        return url
+    if "github.com" in url:
+        return f"{CUSTOM_URL}/{url}"
+    return url
+
+
+# Patch requests.Session.request
+def _patch_requests(url):
+    new_url = _transform_url(url)
+    if new_url != url:
+        return {"url": new_url}
+
+when(requests.sessions.Session.request, "<start>").do(_patch_requests)
+
+
+# Patch git command execution
+try:
+    from esphome.git import run_git_command
+except Exception:  # pragma: no cover
+    run_git_command = None
+
+if run_git_command is not None:
+    def _patch_git(cmd):
+        patched = False
+        for i, arg in enumerate(cmd):
+            if isinstance(arg, str) and "github.com" in arg and not arg.startswith(CUSTOM_URL):
+                cmd[i] = f"{CUSTOM_URL}/{arg}"
+                patched = True
+        if patched:
+            return {"cmd": cmd}
+
+    when(run_git_command, "<start>").do(_patch_git)
+
