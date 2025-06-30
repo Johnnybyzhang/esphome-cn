@@ -1,16 +1,25 @@
-# ESPHome [![Discord Chat](https://img.shields.io/discord/429907082951524364.svg)](https://discord.gg/KhAMKrd) [![GitHub release](https://img.shields.io/github/release/esphome/esphome.svg)](https://GitHub.com/esphome/esphome/releases/)
+# 使用指南
 
-<a href="https://esphome.io/">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://esphome.io/_static/logo-text-on-dark.svg", alt="ESPHome Logo">
-    <img src="https://esphome.io/_static/logo-text-on-light.svg" alt="ESPHome Logo">
-  </picture>
-</a>
+本仓库在加载 `esphome` 包时会自动应用 Github 链接重写补丁，
+将所有指向 `github.com` 的 URL 改写为指定镜像前缀。
 
----
+## 环境要求
+- Python 3.12 及以上
+- 安装依赖：`pip install -r requirements.txt` 和 `pip install dowhen`
 
-[Documentation](https://esphome.io) -- [Issues](https://github.com/esphome/issues/issues) -- [Feature requests](https://github.com/esphome/feature-requests/issues)
+## 设置镜像
+默认镜像地址为 `https://gh.161024.xyz`。
+如需自定义，设置环境变量 `CUSTOM_GITHUB_URL`：
 
----
+```bash
+export CUSTOM_GITHUB_URL="https://mirror.example.com"
+```
 
-[![ESPHome - A project from the Open Home Foundation](https://www.openhomefoundation.org/badges/esphome.png)](https://www.openhomefoundation.org/)
+## 使用方法
+在任何脚本中导入本项目即可自动生效：
+
+```python
+import esphome
+```
+
+此后无论是 `requests` 还是 `git` 操作，只要包含 `github.com` 都会被重写到镜像地址。
