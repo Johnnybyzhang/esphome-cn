@@ -3,7 +3,7 @@ requires = ["setuptools==80.9.0", "wheel>=0.43,<0.46"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name        = "esphome"
+name        = "esphome-cn"
 license     = {text = "MIT"}
 description = "ESPHome is a system to configure your microcontrollers by simple yet powerful configuration files and control them remotely through Home Automation systems."
 readme      = "README.md"
@@ -35,6 +35,7 @@ dynamic = ["dependencies", "optional-dependencies", "version"]
 
 [project.scripts]
 esphome = "esphome.__main__:main"
+esphome-cn = "esphome.__main__:main"
 
 [tool.setuptools]
 platforms            = ["any"]
