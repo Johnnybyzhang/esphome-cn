@@ -1,7 +1,14 @@
 import os
-import requests
 
 from dowhen import when
+import requests
+
+try:
+    from platformio.http import HTTPSession
+    from platformio.package.vcsclient import VCSClientFactory
+except Exception:  # pragma: no cover
+    HTTPSession = None
+    VCSClientFactory = None
 
 # Base URL used as prefix for GitHub requests
 CUSTOM_URL = os.environ.get("CUSTOM_GITHUB_URL", "https://gh.161024.xyz")
@@ -22,7 +29,13 @@ def _patch_requests(url):
     if new_url != url:
         return {"url": new_url}
 
+
 when(requests.sessions.Session.request, "<start>").do(_patch_requests)
+
+if HTTPSession is not None:
+    when(HTTPSession.request, "<start>").do(
+        lambda self, method, url, *args, **kwargs: {"url": _transform_url(url)}
+    )
 
 
 # Patch git command execution
@@ -32,10 +45,15 @@ except Exception:  # pragma: no cover
     run_git_command = None
 
 if run_git_command is not None:
+
     def _patch_git(cmd):
         patched = False
         for i, arg in enumerate(cmd):
-            if isinstance(arg, str) and "github.com" in arg and not arg.startswith(CUSTOM_URL):
+            if (
+                isinstance(arg, str)
+                and "github.com" in arg
+                and not arg.startswith(CUSTOM_URL)
+            ):
                 cmd[i] = f"{CUSTOM_URL}/{arg}"
                 patched = True
         if patched:
@@ -43,3 +61,7 @@ if run_git_command is not None:
 
     when(run_git_command, "<start>").do(_patch_git)
 
+if VCSClientFactory is not None:
+    when(VCSClientFactory.new, "<start>").do(
+        lambda src_dir, remote_url, **kwargs: {"remote_url": _transform_url(remote_url)}
+    )
