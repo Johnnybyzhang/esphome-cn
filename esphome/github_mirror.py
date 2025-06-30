@@ -1,5 +1,8 @@
 import os
 import re
+import subprocess
+import shlex
+from pathlib import Path
 
 from dowhen import when
 import requests
@@ -82,3 +85,32 @@ if HTTPClient is not None:
             endpoints, **kwargs
         )
     )
+
+# Patch generic git commands executed via subprocess
+def _patch_popen(args, **kwargs):
+    """Rewrite GitHub URLs when git commands are executed."""
+    def _handle_list(lst):
+        patched = False
+        for i, arg in enumerate(lst):
+            if isinstance(arg, str):
+                new_arg = _transform_url(arg)
+                if new_arg != arg:
+                    lst[i] = new_arg
+                    patched = True
+        return patched
+
+    # args can be a sequence or string
+    if isinstance(args, (list, tuple)):
+        if args and isinstance(args[0], str) and Path(args[0]).stem.lower() == "git":
+            args = list(args)
+            if _handle_list(args):
+                return {"args": args}
+    elif isinstance(args, str):
+        parts = shlex.split(args)
+        if parts and Path(parts[0]).stem.lower() == "git":
+            if _handle_list(parts):
+                args = " ".join(shlex.quote(p) for p in parts)
+                return {"args": args}
+
+
+when(subprocess.Popen.__init__, "<start>").do(_patch_popen)
